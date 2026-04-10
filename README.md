@@ -16,6 +16,10 @@ IPv6-Visualization-Tools/
 
 ---
 
+## Running the 3D Visualization
+
+./3dheatmap -m ./data/itdk-data.addrs   
+
 ## Running the Web Visualizations (fish_eye & icicle_plot)
 
 Both `fish_eye` and `icicle_plot` are browser-based tools that need be served over HTTP. The easiest way to run both from a single server is to start one from the **project root**.
