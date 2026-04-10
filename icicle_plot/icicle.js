@@ -1,4 +1,4 @@
-// ── Constants ─────────────────────────────────────────────────────────────
+// Constants
 
 const ROW_H   = 48;
 const ROW_GAP = 4;
@@ -6,12 +6,12 @@ const ML      = 56; // left margin for axis labels
 
 const color = d3.scaleSequential(d3.interpolateYlOrRd).domain([0, 1]);
 
-// ── Zoom state ────────────────────────────────────────────────────────────
+// Zoom state
 
 let fullRoot  = null;   // d3 hierarchy root, built once per data load
 let focusNode = null;   // currently zoomed node (fullRoot = no zoom)
 
-// ── Hit-test state (updated every renderView call) ────────────────────────
+// Hit-test state (updated every renderView call)
 // nodeRows: Map<relDepth, node[]> with each row sorted by x0.
 // Binary-search within a row gives O(log n) hover/click lookup.
 
@@ -20,7 +20,7 @@ let hitXOffset   = 0;
 let hitXScale    = 1;
 let hitBaseDepth = 0;
 
-// ── renderView ────────────────────────────────────────────────────────────
+// renderView
 
 function renderView() {
   const canvas     = document.getElementById('chart');
@@ -66,7 +66,7 @@ function renderView() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // ── Draw cells ────────────────────────────────────────────────────────
+  // Draw cells
   for (const d of descendants) {
     const x = ML + (d.x0 - xOffset) * xScale;
     const y = (d.depth - baseDepth) * (ROW_H + ROW_GAP);
@@ -97,7 +97,7 @@ function renderView() {
     }
   }
 
-  // ── Axis labels ───────────────────────────────────────────────────────
+  // Axis labels
   ctx.fillStyle    = '#555';
   ctx.font         = '11px sans-serif';
   ctx.textAlign    = 'right';
@@ -114,7 +114,7 @@ function renderView() {
   }
 }
 
-// ── render ────────────────────────────────────────────────────────────────
+// render
 // Builds the d3 hierarchy + partition from the fetched JSON, then calls
 // renderView(). Called once per data load.
 
@@ -140,7 +140,7 @@ function render(data) {
   renderView();
 }
 
-// ── Canvas hit testing ────────────────────────────────────────────────────
+// Canvas hit testing
 
 function nodeAtPoint(cx, cy) {
   if (!nodeRows) return null;
@@ -161,7 +161,7 @@ function nodeAtPoint(cx, cy) {
   return null;
 }
 
-// ── Canvas event listeners ────────────────────────────────────────────────
+// Canvas event listeners
 
 (function () {
   const canvas  = document.getElementById('chart');
@@ -196,7 +196,7 @@ function nodeAtPoint(cx, cy) {
   canvas.addEventListener('mouseleave', () => { tooltip.style.opacity = 0; });
 })();
 
-// ── Load & wire up buttons ────────────────────────────────────────────────
+// Load & wire up buttons
 
 async function load(isIPv6) {
   const file     = isIPv6 ? 'data/ipv6-hierarchy.json' : 'data/ipv4-hierarchy.json';
