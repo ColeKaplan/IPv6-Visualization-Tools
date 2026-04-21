@@ -2,26 +2,72 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>IP Address Space Icicle Plot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IP Address Space — Icicle Plot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 </head>
 <body>
-  <h1>IPv6 Icicle Plot</h1>
-  <p id="subtitle">Prefix hierarchy: /32 → /48 → /64. Width = block size. Color = activity density.</p>
-  <p id="subtitle2">Takes a few seconds to load. Please wait.</p>
 
-  <div id="controls">
-    <button id="btn-ipv6">Load IPv6</button>
-    <button id="btn-ipv4">Load IPv4</button>
-    <button id="btn-reset" style="display:none">&#8617; Reset</button>
+  <div id="app">
+
+    <header id="header">
+      <div id="header-left">
+        <div id="title-group">
+          <h1>IP Address Space</h1>
+          <span id="protocol-badge">—</span>
+        </div>
+        <p id="subtitle">Select a dataset to visualize the prefix hierarchy. Width encodes block size; color encodes activity density.</p>
+      </div>
+      <div id="header-right">
+        <div id="legend">
+          <span class="legend-label">Low</span>
+          <div id="legend-bar"></div>
+          <span class="legend-label">High</span>
+        </div>
+      </div>
+    </header>
+
+    <div id="toolbar">
+      <div id="controls">
+        <button id="btn-ipv6" class="btn btn-primary">
+          <span class="btn-icon">⬡</span> IPv6
+        </button>
+        <button id="btn-ipv4" class="btn btn-primary">
+          <span class="btn-icon">⬡</span> IPv4
+        </button>
+        <button id="btn-reset" class="btn btn-ghost" style="display:none">
+          ↩ Reset zoom
+        </button>
+      </div>
+      <div id="status-group">
+        <span id="status" class="status-text">Press a button to load data.</span>
+        <span id="density-badge" class="density-badge" style="display:none"></span>
+      </div>
+    </div>
+
+    <nav id="breadcrumb-nav" aria-label="Zoom path">
+      <span id="breadcrumb-inner"></span>
+    </nav>
+
+    <div id="canvas-wrap">
+      <div id="axis-labels"></div>
+      <div id="canvas-area">
+        <canvas id="chart"></canvas>
+        <canvas id="overlay"></canvas>
+        <div id="empty-state">
+          <div class="empty-icon">◈</div>
+          <p>Load a dataset to begin</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="tooltip"></div>
+
   </div>
-
-  <p id="breadcrumb"></p>
-  <p id="status">Press a button to load data.</p>
-
-  <canvas id="chart"></canvas>
-  <div id="tooltip"></div>
 
   <script src="icicle.js"></script>
 </body>
