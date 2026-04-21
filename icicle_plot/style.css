@@ -6,7 +6,7 @@ body {
   }
   
   h1 { font-size: 20px; margin-bottom: 4px; }
-  #subtitle { font-size: 13px; color: #555; margin-bottom: 16px; }
+  #subtitle, #subtitle2 { font-size: 13px; color: #555; margin-bottom: 16px; }
   
   #controls { margin-bottom: 12px; }
   

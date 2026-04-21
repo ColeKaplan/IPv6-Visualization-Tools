@@ -2,10 +2,15 @@
 parse_addrs.py – preprocess .addrs files into icicle-plot hierarchy JSON.
 
 Usage:
-    python3 parse_addrs.py --mode ipv6 --input data/itdk-data-IPv6.addrs
-    python3 parse_addrs.py --mode ipv4 --input data/itdk-data.addrs
+    python3 parse_addrs.py --mode ipv6    --input data/itdk-data-IPv6.addrs
+    python3 parse_addrs.py --mode ipv4    --input data/itdk-data.addrs
+    python3 parse_addrs.py --mode ipv6-64 --input data/itdk-data-IPv6.addrs
 
-Output written to data/ipv6-hierarchy.json or data/ipv4-hierarchy.json.
+Output:
+    ipv6    → data/ipv6-hierarchy.json   (two-level /32→/48 tree)
+    ipv4    → data/ipv4-hierarchy.json   (two-level /8→/16 tree)
+    ipv6-64 → data/ipv6-64/{12hexchars}.json  (one file per active /48 block,
+               each containing the /48→/64 subtree for on-demand loading)
 """
 
 import argparse
@@ -119,8 +124,9 @@ def build_hierarchy(input_path: str, is_ipv6: bool) -> dict:
                 skipped += 1
 
     # ── Serialise to the JSON tree format ─────────────────────────────────
+    sorted_keys1 = sorted(tree)
     children1 = []
-    for k1 in sorted(tree):
+    for idx, k1 in enumerate(sorted_keys1):
         children2 = []
         count1 = 0
         for k2 in sorted(tree[k1]):
@@ -131,12 +137,29 @@ def build_hierarchy(input_path: str, is_ipv6: bool) -> dict:
                 'level': L2,
             })
             count1 += cnt
+        k1_int = int(k1, 16)
         children1.append({
             'name':     hex_key_to_label(k1, L1, is_ipv6),
             'count':    count1,
             'level':    L1,
+            'sort_key': k1_int,
             'children': children2,
         })
+
+        # For IPv6, insert a gap node between consecutive active /32 entries.
+        if is_ipv6 and idx + 1 < len(sorted_keys1):
+            next_k1 = sorted_keys1[idx + 1]
+            gap_size = int(next_k1, 16) - k1_int - 1
+            if gap_size > 0:
+                children1.append({
+                    'name':     f'~{gap_size} empty /32s',
+                    'count':    0,
+                    'level':    L1,
+                    'gap':      True,
+                    'gap_size': gap_size,
+                    'sort_key': k1_int + 0.5,
+                    'children': [],
+                })
 
     total = sum(c['count'] for c in children1)
     result = {
@@ -159,27 +182,85 @@ def build_hierarchy(input_path: str, is_ipv6: bool) -> dict:
     return result
 
 
+# ── Per-/48 detail builder (ipv6-64 mode) ─────────────────────────────────
+
+def build_64_detail(input_path: str, out_dir: str) -> None:
+    """Write one JSON file per active /48 block containing its /64 children.
+
+    Files are written to  <out_dir>/ipv6-64/<12-char-hex-prefix>.json
+    Each file has the shape: {"children": [{name, count, level}, …]}
+    """
+    # k2 = first 12 hex chars = /48 prefix
+    # k3 = first 16 hex chars = /64 prefix
+    tree: dict[str, dict[str, int]] = {}
+    parsed = 0
+    skipped = 0
+
+    with open(input_path, 'r', errors='replace') as fh:
+        for raw in fh:
+            addr = raw.strip()
+            if not addr or addr.startswith('#'):
+                continue
+            try:
+                h  = expand_ipv6_to_hex(addr)
+                k2 = h[:12]
+                k3 = h[:16]
+                if k2 not in tree:
+                    tree[k2] = {}
+                sub = tree[k2]
+                sub[k3] = sub.get(k3, 0) + 1
+                parsed += 1
+            except Exception:
+                skipped += 1
+
+    out_subdir = os.path.join(out_dir, 'ipv6-64')
+    os.makedirs(out_subdir, exist_ok=True)
+
+    for k2 in sorted(tree):
+        children = []
+        for k3 in sorted(tree[k2]):
+            children.append({
+                'name':  hex_key_to_label(k3, 64, True),
+                'count': tree[k2][k3],
+                'level': 64,
+            })
+        out_file = os.path.join(out_subdir, f'{k2}.json')
+        with open(out_file, 'w') as fh:
+            json.dump({'children': children}, fh, separators=(',', ':'))
+
+    total_files = len(tree)
+    total_64 = sum(len(v) for v in tree.values())
+    print(f'[IPv6-64] parsed={parsed}  skipped={skipped}')
+    print(f'          /48 blocks={total_files}  /64 nodes={total_64}')
+    print(f'          written → {out_subdir}/')
+
+
 # ── Entry point ───────────────────────────────────────────────────────────
 
 def main() -> None:
     parser = argparse.ArgumentParser(description='Preprocess .addrs files into icicle hierarchy JSON.')
-    parser.add_argument('--mode',  required=True, choices=['ipv4', 'ipv6'],
-                        help='Address family to parse')
+    parser.add_argument('--mode',  required=True, choices=['ipv4', 'ipv6', 'ipv6-64'],
+                        help='Address family / detail level to parse')
     parser.add_argument('--input', required=True,
                         help='Path to the .addrs file')
     args = parser.parse_args()
 
-    is_ipv6 = args.mode == 'ipv6'
-    out_name = 'ipv6-hierarchy.json' if is_ipv6 else 'ipv4-hierarchy.json'
-
-    # Output goes into data/ relative to the input file's directory
-    data_dir = os.path.join(os.path.dirname(os.path.abspath(args.input)), '')
-    out_path = os.path.join(data_dir, out_name)
-
     if not os.path.isfile(args.input):
         sys.exit(f'Error: input file not found: {args.input}')
 
+    # Output directory is always the same folder as the input file.
+    data_dir = os.path.join(os.path.dirname(os.path.abspath(args.input)), '')
+
     print(f'Reading {args.input} …')
+
+    if args.mode == 'ipv6-64':
+        build_64_detail(args.input, data_dir)
+        return
+
+    is_ipv6 = args.mode == 'ipv6'
+    out_name = 'ipv6-hierarchy.json' if is_ipv6 else 'ipv4-hierarchy.json'
+    out_path = os.path.join(data_dir, out_name)
+
     result = build_hierarchy(args.input, is_ipv6)
 
     os.makedirs(data_dir, exist_ok=True)
