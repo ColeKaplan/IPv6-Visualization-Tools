@@ -24,10 +24,18 @@ IPv6-Visualization-Tools/
 
 Both `fish_eye` and `icicle_plot` are browser-based tools that need be served over HTTP. The easiest way to run both from a single server is to start one from the **project root**.
 
+### Pre-req for icicle_plot
+In the icicle_plot folder, if you don't see the ipv6-64 folder inside the data folder, run
+
+```bash
+python3 parse_addrs.py --mode ipv6-64 --input data/itdk-data-IPv6.addrs
+```
+
 ### Python Live Server
 
 ```bash
 # From the project root
+# Recommended for the icicle plot
 python3 -m http.server 8000
 ```
 
@@ -38,7 +46,7 @@ Then open in your browser:
 ### VS Code Live Server extension
 
 1. Right-click the **project root folder** in the VS Code Explorer and select **"Open with Live Server"**.
-2. Navigate to `fish_eye/` or `icicle_plot/` in the browser tab that opens.
+2. Navigate to `fish_eye/` in the browser tab that opens.
 
 ---
 
