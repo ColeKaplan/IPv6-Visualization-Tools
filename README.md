@@ -18,7 +18,7 @@ IPv6-Visualization-Tools/
 
 ## Running the 3D Visualization
 
-./3dheatmap -m ./data/itdk-data.addrs   
+./3dheatmap -m ./data/itdk-data-IPv6.addrs 
 
 ## Running the Web Visualizations (fish_eye & icicle_plot)
 
@@ -29,6 +29,14 @@ In the icicle_plot folder, if you don't see the ipv6-64 folder inside the data f
 
 ```bash
 python3 parse_addrs.py --mode ipv6-64 --input data/itdk-data-IPv6.addrs
+```
+
+### Pre-req for 3dheatmap
+
+If you don't see the appropriate ITDK map in the fish_eye/maps folder, run
+
+```bash
+./ipv6-heatmap -o ./fish_eye/maps/itdk_map_ipv6.png < ./data/itdk-data-IPv6.addrs
 ```
 
 ### Python Live Server
