@@ -18,7 +18,9 @@ IPv6-Visualization-Tools/
 
 ## Running the 3D Visualization
 
+```bash
 ./3dheatmap -m ./data/itdk-data-IPv6.addrs 
+```
 
 ## Running the Web Visualizations (fish_eye & icicle_plot)
 
